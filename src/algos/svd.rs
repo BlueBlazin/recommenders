@@ -47,7 +47,7 @@ impl Svd {
         }
     }
 
-    pub fn fit_with(&mut self, dataset: Dataset, mut error_fn: impl ErrorFn) {
+    pub fn fit_with(&mut self, dataset: &Dataset, mut error_fn: impl ErrorFn) {
         let num_users = dataset.user_to_idx.len();
         let num_items = dataset.item_to_idx.len();
         let num_examples = dataset.values.len();
@@ -117,7 +117,7 @@ impl Svd {
 }
 
 impl Algorithm for Svd {
-    fn fit(&mut self, dataset: Dataset) {
+    fn fit(&mut self, dataset: &Dataset) {
         self.fit_with(dataset, MeanSquaredError {});
     }
 
@@ -147,12 +147,18 @@ mod tests {
         let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
         let dataset = Dataset::new(csv_reader.into_iter());
         let mut svd = Svd::default();
-        svd.fit(dataset);
-        println!("{:?}", svd.user_factors);
+        svd.fit(&dataset);
     }
 
     #[test]
     fn test_predict() {
-        //
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut svd = Svd::default();
+        svd.fit(&dataset);
+        let _pred = svd.predict(
+            dataset.user_to_idx[&dataset.users[0]],
+            dataset.item_to_idx[&dataset.items[0]],
+        );
     }
 }
