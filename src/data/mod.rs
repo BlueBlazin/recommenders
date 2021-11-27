@@ -1,3 +1,7 @@
+mod reader;
+
+pub use crate::data::reader::CsvReader;
+use rand::prelude::*;
 use std::collections::HashMap;
 
 pub struct Dataset {
@@ -41,41 +45,55 @@ impl Dataset {
             values,
         }
     }
-}
 
-pub struct CsvReader {
-    data: Vec<(String, String, f64)>,
-}
+    pub fn len(&self) -> usize {
+        self.users.len()
+    }
 
-impl CsvReader {
-    pub fn new(path: &str, cols: (usize, usize, usize), delimiter: u8, has_headers: bool) -> Self {
-        let (user_col, item_col, value_col) = cols;
+    pub fn shuffle(self) -> Self {
+        self.shuffle_with(thread_rng())
+    }
 
-        let mut rdr = csv::ReaderBuilder::new()
-            .delimiter(delimiter)
-            .has_headers(has_headers)
-            .from_path(path)
-            .unwrap();
-
-        let mut data = vec![];
-
-        for result in rdr.records() {
-            let record = result.unwrap();
-            let user = record.get(user_col).unwrap().to_owned();
-            let item = record.get(item_col).unwrap().to_owned();
-            let value: f64 = record.get(value_col).unwrap().parse().unwrap();
-            data.push((user, item, value));
+    pub fn shuffle_with(mut self, mut rng: ThreadRng) -> Self {
+        for i in 0..self.users.len() {
+            let j = rng.gen_range(0..=i);
+            self.users.swap(i, j);
+            self.items.swap(i, j);
+            self.values.swap(i, j);
         }
 
-        Self { data }
+        self
+    }
+
+    pub fn train_test_split(mut self, num_train: usize) -> (Self, Self) {
+        let testset = Dataset {
+            user_to_idx: self.user_to_idx.clone(),
+            item_to_idx: self.item_to_idx.clone(),
+            users: self.users.split_off(num_train),
+            items: self.items.split_off(num_train),
+            values: self.values.split_off(num_train),
+        };
+
+        let trainset = Dataset {
+            user_to_idx: self.user_to_idx,
+            item_to_idx: self.item_to_idx,
+            users: self.users,
+            items: self.items,
+            values: self.values,
+        };
+
+        (trainset, testset)
     }
 }
 
-impl IntoIterator for CsvReader {
-    type Item = (String, String, f64);
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
+    #[test]
+    fn test_train_test_split() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let (trainset, testset) = Dataset::new(csv_reader.into_iter()).train_test_split(60);
+        println!("{}, {}", trainset.len(), testset.len());
     }
 }
