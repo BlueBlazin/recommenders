@@ -26,6 +26,7 @@ pub trait Algo {
 
 pub trait ErrorFn {
     fn call(&mut self, pred: f64, actual: f64) -> f64;
+    fn grad(&mut self, pred: f64, actual: f64) -> f64;
     fn grad_user(&mut self, pred: f64, actual: f64, p_user: f64, q_item: f64) -> f64;
     fn grad_item(&mut self, pred: f64, actual: f64, p_user: f64, q_item: f64) -> f64;
 }
@@ -35,6 +36,10 @@ pub struct MeanSquaredError {}
 impl ErrorFn for MeanSquaredError {
     fn call(&mut self, pred: f64, actual: f64) -> f64 {
         (pred - actual) * (pred - actual)
+    }
+
+    fn grad(&mut self, pred: f64, actual: f64) -> f64 {
+        2.0 * (pred - actual)
     }
 
     fn grad_user(&mut self, pred: f64, actual: f64, _p_user: f64, q_item: f64) -> f64 {
@@ -57,6 +62,7 @@ pub struct Svd {
     pub lr_item: f64,
     pub reg_user: f64,
     pub reg_item: f64,
+    pub biased: bool,
 }
 
 impl Svd {
@@ -67,6 +73,7 @@ impl Svd {
         lr_item: f64,
         reg_user: f64,
         reg_item: f64,
+        biased: bool,
     ) -> Self {
         Self {
             user_bias: None,
@@ -79,6 +86,7 @@ impl Svd {
             lr_item,
             reg_user,
             reg_item,
+            biased,
         }
     }
 
@@ -96,8 +104,8 @@ impl Svd {
         let mut user_factors = DMatrix::from_fn(num_users, self.num_factors, randn);
         let mut item_factors = DMatrix::from_fn(num_items, self.num_factors, randn);
 
-        let user_bias = DVector::zeros(num_users);
-        let item_bias = DVector::zeros(num_items);
+        let mut user_bias = DVector::zeros(num_users);
+        let mut item_bias = DVector::zeros(num_items);
 
         // iterate over num epochs
         for epoch in 0..self.num_epochs {
@@ -118,6 +126,13 @@ impl Svd {
 
                 let (lr_u, lr_i) = (self.lr_user, self.lr_item);
                 let (reg_u, reg_i) = (self.reg_user, self.reg_item);
+                let grad_bias = error_fn.grad(pred, actual);
+
+                if self.biased {
+                    let (bu, bi) = (user_bias[user_idx], item_bias[item_idx]);
+                    user_bias[user_idx] -= lr_u * (grad_bias + reg_u * bu);
+                    item_bias[user_idx] -= lr_i * (grad_bias + reg_i * bi);
+                }
 
                 for f in 0..self.num_factors {
                     let p_user = user_factors[(user_idx, f)];
@@ -141,7 +156,7 @@ impl Svd {
 
 impl Default for Svd {
     fn default() -> Self {
-        Svd::new(20, 100, 0.01, 0.1, 0.001, 0.001)
+        Svd::new(20, 100, 0.005, 0.005, 0.003, 0.003, true)
     }
 }
 
