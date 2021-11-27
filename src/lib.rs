@@ -16,15 +16,9 @@ Desired features:
 7. speed
 */
 
-pub trait LossFn {}
-
-pub trait Algo {
-    fn fit(&mut self);
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::algos::Svd;
+    use crate::algos::{Algorithm, Svd};
     use crate::data::{CsvReader, Dataset};
 
     #[test]

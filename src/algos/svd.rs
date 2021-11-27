@@ -1,3 +1,4 @@
+use crate::algos::Algorithm;
 use crate::data::Dataset;
 use crate::objectives::{ErrorFn, MeanSquaredError};
 use na::{DMatrix, DVector};
@@ -44,10 +45,6 @@ impl Svd {
             biased,
             verbose,
         }
-    }
-
-    pub fn fit(&mut self, dataset: Dataset) {
-        self.fit_with(dataset, MeanSquaredError {})
     }
 
     pub fn fit_with(&mut self, dataset: Dataset, mut error_fn: impl ErrorFn) {
@@ -116,6 +113,12 @@ impl Svd {
         self.user_factors = Some(user_factors);
         self.item_bias = Some(item_bias);
         self.item_factors = Some(item_factors);
+    }
+}
+
+impl Algorithm for Svd {
+    fn fit(&mut self, dataset: Dataset) {
+        self.fit_with(dataset, MeanSquaredError {});
     }
 }
 
