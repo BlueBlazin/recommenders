@@ -120,10 +120,39 @@ impl Algorithm for Svd {
     fn fit(&mut self, dataset: Dataset) {
         self.fit_with(dataset, MeanSquaredError {});
     }
+
+    fn predict(&self, user_idx: usize, item_idx: usize) -> f64 {
+        let user_vec = self.user_factors.as_ref().unwrap().row(user_idx);
+        let item_vec = self.item_factors.as_ref().unwrap().row(item_idx);
+        let bu = self.user_bias.as_ref().unwrap()[user_idx];
+        let bi = self.item_bias.as_ref().unwrap()[item_idx];
+
+        bu + bi + user_vec.dot(&item_vec)
+    }
 }
 
 impl Default for Svd {
     fn default() -> Self {
         Svd::new(20, 100, 0.005, 0.005, 0.003, 0.003, true, false)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::algos::{Algorithm, Svd};
+    use crate::data::{CsvReader, Dataset};
+
+    #[test]
+    fn test_fit() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut svd = Svd::default();
+        svd.fit(dataset);
+        println!("{:?}", svd.user_factors);
+    }
+
+    #[test]
+    fn test_predict() {
+        //
     }
 }

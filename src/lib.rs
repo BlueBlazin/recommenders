@@ -15,18 +15,3 @@ Desired features:
 6. a plug and play command line interface
 7. speed
 */
-
-#[cfg(test)]
-mod tests {
-    use crate::algos::{Algorithm, Svd};
-    use crate::data::{CsvReader, Dataset};
-
-    #[test]
-    fn it_works() {
-        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
-        let dataset = Dataset::new(csv_reader.into_iter());
-        let mut svd = Svd::default();
-        svd.fit(dataset);
-        println!("{:?}", svd.user_factors);
-    }
-}
