@@ -16,6 +16,7 @@ pub struct Svd {
     pub reg_user: f64,
     pub reg_item: f64,
     pub biased: bool,
+    pub verbose: bool,
 }
 
 impl Svd {
@@ -27,6 +28,7 @@ impl Svd {
         reg_user: f64,
         reg_item: f64,
         biased: bool,
+        verbose: bool,
     ) -> Self {
         Self {
             user_bias: None,
@@ -40,6 +42,7 @@ impl Svd {
             reg_user,
             reg_item,
             biased,
+            verbose,
         }
     }
 
@@ -61,7 +64,8 @@ impl Svd {
         let mut item_bias = DVector::zeros(num_items);
 
         // iterate over num epochs
-        for epoch in 0..self.num_epochs {
+        for epoch in 1..=self.num_epochs {
+            let mut tot_epoch_err = 0.0;
             // iterate over all training examples
             for i in 0..num_examples {
                 let user_idx = dataset.user_to_idx[&dataset.users[i]];
@@ -75,7 +79,7 @@ impl Svd {
                 let pred = bu + bi + user_vec.dot(&item_vec);
                 let actual = dataset.values[i];
 
-                let error = error_fn.call(pred, actual);
+                tot_epoch_err += error_fn.call(pred, actual);
 
                 let (lr_u, lr_i) = (self.lr_user, self.lr_item);
                 let (reg_u, reg_i) = (self.reg_user, self.reg_item);
@@ -98,6 +102,14 @@ impl Svd {
                     item_factors[(item_idx, f)] -= lr_i * (grad_item + reg_i * q_item);
                 }
             }
+
+            if self.verbose {
+                println!(
+                    "Average error after epoch {}: {}",
+                    epoch,
+                    tot_epoch_err / num_examples as f64,
+                );
+            }
         }
 
         self.user_bias = Some(user_bias);
@@ -109,6 +121,6 @@ impl Svd {
 
 impl Default for Svd {
     fn default() -> Self {
-        Svd::new(20, 100, 0.005, 0.005, 0.003, 0.003, true)
+        Svd::new(20, 100, 0.005, 0.005, 0.003, 0.003, true, false)
     }
 }
