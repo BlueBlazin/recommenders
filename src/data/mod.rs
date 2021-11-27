@@ -96,4 +96,10 @@ mod tests {
         let (trainset, testset) = Dataset::new(csv_reader.into_iter()).train_test_split(60);
         println!("{}, {}", trainset.len(), testset.len());
     }
+
+    #[test]
+    fn test_shuffle() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
+    }
 }
