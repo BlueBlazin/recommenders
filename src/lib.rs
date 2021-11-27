@@ -1,7 +1,7 @@
 extern crate nalgebra as na;
 
-use na::{DMatrix, DMatrixSlice, DVector};
-use ndarray::prelude::*;
+use na::{DMatrix, DVector};
+// use ndarray::prelude::*;
 use rand::prelude::*;
 use rand_distr::StandardNormal;
 use std::collections::HashMap;
@@ -116,17 +116,18 @@ impl Svd {
 
                 let error = error_fn.call(pred, actual);
 
+                let (lr_u, lr_i) = (self.lr_user, self.lr_item);
+                let (reg_u, reg_i) = (self.reg_user, self.reg_item);
+
                 for f in 0..self.num_factors {
-                    let p_user: f64 = user_factors[(user_idx, f)];
-                    let q_item: f64 = item_factors[(item_idx, f)];
+                    let p_user = user_factors[(user_idx, f)];
+                    let q_item = item_factors[(item_idx, f)];
 
                     let grad_user = error_fn.grad_user(pred, actual, p_user, q_item);
                     let grad_item = error_fn.grad_item(pred, actual, p_user, q_item);
 
-                    user_factors[(user_idx, f)] -=
-                        self.lr_user * (grad_user + self.reg_user * p_user);
-                    item_factors[(item_idx, f)] -=
-                        self.lr_item * (grad_item + self.reg_item * q_item);
+                    user_factors[(user_idx, f)] -= lr_u * (grad_user + reg_u * p_user);
+                    item_factors[(item_idx, f)] -= lr_i * (grad_item + reg_i * q_item);
                 }
             }
         }
@@ -140,7 +141,7 @@ impl Svd {
 
 impl Default for Svd {
     fn default() -> Self {
-        Svd::new(100, 20, 0.1, 0.1, 0.001, 0.001)
+        Svd::new(20, 100, 0.01, 0.1, 0.001, 0.001)
     }
 }
 
@@ -234,5 +235,6 @@ mod tests {
         let dataset = Dataset::new(csv_reader.into_iter());
         let mut svd = Svd::default();
         svd.fit(dataset);
+        println!("{:?}", svd.user_factors);
     }
 }
