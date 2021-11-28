@@ -38,6 +38,7 @@ pub fn smape(preds: &[f64], actuals: &[f64]) -> f64 {
     100.0 * sum / preds.len() as f64
 }
 
+#[derive(Debug)]
 pub enum MetricType {
     Rmse,
     Mae,
@@ -45,6 +46,7 @@ pub enum MetricType {
     Smape,
 }
 
+#[derive(Debug)]
 pub enum MetricValue {
     Rmse(f64),
     Mae(f64),
