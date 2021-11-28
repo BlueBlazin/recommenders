@@ -95,9 +95,9 @@ mod tests {
     #[test]
     fn test_train_test_split() {
         let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
-        let dataset = Dataset::new(csv_reader.into_iter());
+        let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
         let (trainset, testset) = dataset.train_test_split(60);
-        println!("{}, {}", trainset.len(), testset.len());
+        println!("{}, {}", trainset.shuffle().len(), testset.len());
     }
 
     #[test]
