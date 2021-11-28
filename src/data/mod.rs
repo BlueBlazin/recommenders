@@ -3,16 +3,12 @@ mod reader;
 pub use crate::data::reader::CsvReader;
 use rand::prelude::*;
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct Dataset<'a> {
     pub user_to_idx: Rc<HashMap<String, usize>>,
     pub item_to_idx: Rc<HashMap<String, usize>>,
-    // pub users: Vec<String>,
-    // pub items: Vec<String>,
-    // pub values: Vec<f64>,
     pub users: Cow<'a, [String]>,
     pub items: Cow<'a, [String]>,
     pub values: Cow<'a, [f64]>,
@@ -88,44 +84,8 @@ impl<'a> Dataset<'a> {
             values: Cow::from(&self.values[num_train..]),
         };
 
-        // let testset = Dataset {
-        //     user_to_idx: self.user_to_idx.clone(),
-        //     item_to_idx: self.item_to_idx.clone(),
-        //     users: self.users.split_off(num_train),
-        //     items: self.items.split_off(num_train),
-        //     values: self.values.split_off(num_train),
-        // };
-
-        // let trainset = Dataset {
-        //     user_to_idx: self.user_to_idx,
-        //     item_to_idx: self.item_to_idx,
-        //     users: self.users,
-        //     items: self.items,
-        //     values: self.values,
-        // };
-
         (trainset, testset)
     }
-
-    // pub fn train_test_split(mut self, num_train: usize) -> (Self, Self) {
-    //     let testset = Dataset {
-    //         user_to_idx: self.user_to_idx.clone(),
-    //         item_to_idx: self.item_to_idx.clone(),
-    //         users: self.users.split_off(num_train),
-    //         items: self.items.split_off(num_train),
-    //         values: self.values.split_off(num_train),
-    //     };
-
-    //     let trainset = Dataset {
-    //         user_to_idx: self.user_to_idx,
-    //         item_to_idx: self.item_to_idx,
-    //         users: self.users,
-    //         items: self.items,
-    //         values: self.values,
-    //     };
-
-    //     (trainset, testset)
-    // }
 }
 
 #[cfg(test)]
