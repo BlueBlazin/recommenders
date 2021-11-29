@@ -68,6 +68,7 @@ impl Svd {
                 let user_idx = dataset.user_to_idx[&dataset.users[i]];
                 let item_idx = dataset.item_to_idx[&dataset.items[i]];
 
+                // get factor vectors and biases
                 let user_vec = user_factors.row(user_idx);
                 let item_vec = item_factors.row(item_idx);
                 let bu = user_bias[user_idx];
@@ -82,12 +83,14 @@ impl Svd {
                 let (reg_u, reg_i) = (self.reg_user, self.reg_item);
                 let grad_bias = error_fn.grad(pred, actual);
 
+                // if biased perform SGD on biases
                 if self.biased {
                     let (bu, bi) = (user_bias[user_idx], item_bias[item_idx]);
                     user_bias[user_idx] -= lr_u * (grad_bias + reg_u * bu);
                     item_bias[user_idx] -= lr_i * (grad_bias + reg_i * bi);
                 }
 
+                // perform gradient descent one factor at a time
                 for f in 0..self.num_factors {
                     let p_user = user_factors[(user_idx, f)];
                     let q_item = item_factors[(item_idx, f)];
@@ -108,7 +111,7 @@ impl Svd {
                 );
             }
         }
-
+        // set biases and factors on instance
         self.user_bias = Some(user_bias);
         self.user_factors = Some(user_factors);
         self.item_bias = Some(item_bias);
