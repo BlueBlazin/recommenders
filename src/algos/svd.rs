@@ -6,44 +6,44 @@ use rand::prelude::*;
 use rand_distr::StandardNormal;
 
 pub struct Svd {
-    pub user_bias: Option<DVector<f64>>,
-    pub user_factors: Option<DMatrix<f64>>,
-    pub item_bias: Option<DVector<f64>>,
-    pub item_factors: Option<DMatrix<f64>>,
     pub num_factors: usize,
     pub num_epochs: usize,
+    pub biased: bool,
     pub lr_user: f64,
     pub lr_item: f64,
     pub reg_user: f64,
     pub reg_item: f64,
-    pub biased: bool,
     pub verbose: bool,
+    pub user_bias: Option<DVector<f64>>,
+    pub user_factors: Option<DMatrix<f64>>,
+    pub item_bias: Option<DVector<f64>>,
+    pub item_factors: Option<DMatrix<f64>>,
 }
 
 impl Svd {
     pub fn new(
         num_factors: usize,
         num_epochs: usize,
+        biased: bool,
         lr_user: f64,
         lr_item: f64,
         reg_user: f64,
         reg_item: f64,
-        biased: bool,
         verbose: bool,
     ) -> Self {
         Self {
-            user_bias: None,
-            user_factors: None,
-            item_bias: None,
-            item_factors: None,
             num_factors,
             num_epochs,
+            biased,
             lr_user,
             lr_item,
             reg_user,
             reg_item,
-            biased,
             verbose,
+            user_bias: None,
+            user_factors: None,
+            item_bias: None,
+            item_factors: None,
         }
     }
 
