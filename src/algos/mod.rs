@@ -1,5 +1,7 @@
+mod nmf;
 mod svd;
 
+pub use crate::algos::nmf::Nmf;
 pub use crate::algos::svd::Svd;
 use crate::data::Dataset;
 use crate::metrics::*;

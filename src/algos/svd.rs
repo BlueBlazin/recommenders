@@ -13,7 +13,7 @@ pub struct Svd {
     pub lr_item: f64,
     pub reg_user: f64,
     pub reg_item: f64,
-    pub verbose: bool,
+    verbose: bool,
     pub user_bias: Option<DVector<f64>>,
     pub user_factors: Option<DMatrix<f64>>,
     pub item_bias: Option<DVector<f64>>,
@@ -60,6 +60,9 @@ impl Svd {
         let mut user_bias = DVector::zeros(num_users);
         let mut item_bias = DVector::zeros(num_items);
 
+        let (lr_u, lr_i) = (self.lr_user, self.lr_item);
+        let (reg_u, reg_i) = (self.reg_user, self.reg_item);
+
         // iterate over num epochs
         for epoch in 1..=self.num_epochs {
             let mut tot_epoch_err = 0.0;
@@ -74,13 +77,14 @@ impl Svd {
                 let bu = user_bias[user_idx];
                 let bi = item_bias[item_idx];
 
+                // compute prediction
                 let pred = bu + bi + user_vec.dot(&item_vec);
                 let actual = dataset.values[i];
 
+                // add example error to total
                 tot_epoch_err += error_fn.call(pred, actual);
 
-                let (lr_u, lr_i) = (self.lr_user, self.lr_item);
-                let (reg_u, reg_i) = (self.reg_user, self.reg_item);
+                // calculate gradient w.r.t. bias
                 let grad_bias = error_fn.grad(pred, actual);
 
                 // if biased perform SGD on biases
@@ -95,6 +99,7 @@ impl Svd {
                     let p_user = user_factors[(user_idx, f)];
                     let q_item = item_factors[(item_idx, f)];
 
+                    // calculate gradients w.r.t. user and item vectors
                     let grad_user = error_fn.grad_user(pred, actual, p_user, q_item);
                     let grad_item = error_fn.grad_item(pred, actual, p_user, q_item);
 
@@ -111,11 +116,18 @@ impl Svd {
                 );
             }
         }
+
         // set biases and factors on instance
         self.user_bias = Some(user_bias);
         self.user_factors = Some(user_factors);
         self.item_bias = Some(item_bias);
         self.item_factors = Some(item_factors);
+    }
+}
+
+impl Default for Svd {
+    fn default() -> Self {
+        Self::new(20, 100, true, 0.005, 0.005, 0.003, 0.003, false)
     }
 }
 
@@ -131,12 +143,6 @@ impl Algorithm for Svd {
         let bi = self.item_bias.as_ref().unwrap()[item_idx];
 
         bu + bi + user_vec.dot(&item_vec)
-    }
-}
-
-impl Default for Svd {
-    fn default() -> Self {
-        Svd::new(20, 100, 0.005, 0.005, 0.003, 0.003, true, false)
     }
 }
 
