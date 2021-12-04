@@ -4,6 +4,7 @@ pub mod algos;
 pub mod data;
 pub mod metrics;
 pub mod objectives;
+pub mod similarities;
 
 /*
 Desired features:
