@@ -12,6 +12,8 @@ pub struct Dataset<'a> {
     pub users: Cow<'a, [String]>,
     pub items: Cow<'a, [String]>,
     pub values: Cow<'a, [f64]>,
+    pub num_users: usize,
+    pub num_items: usize,
 }
 
 impl<'a> Dataset<'a> {
@@ -39,12 +41,17 @@ impl<'a> Dataset<'a> {
             values.push(value);
         }
 
+        let num_users = user_to_idx.len();
+        let num_items = item_to_idx.len();
+
         Self {
             user_to_idx: Rc::from(user_to_idx),
             item_to_idx: Rc::from(item_to_idx),
             users: Cow::from(users),
             items: Cow::from(items),
             values: Cow::from(values),
+            num_users,
+            num_items,
         }
     }
 
@@ -74,6 +81,8 @@ impl<'a> Dataset<'a> {
             users: Cow::from(&self.users[..num_train]),
             items: Cow::from(&self.items[..num_train]),
             values: Cow::from(&self.values[..num_train]),
+            num_users: self.num_users,
+            num_items: self.num_items,
         };
 
         let testset = Dataset {
@@ -82,6 +91,8 @@ impl<'a> Dataset<'a> {
             users: Cow::from(&self.users[num_train..]),
             items: Cow::from(&self.items[num_train..]),
             values: Cow::from(&self.values[num_train..]),
+            num_users: self.num_users,
+            num_items: self.num_items,
         };
 
         (trainset, testset)
