@@ -96,3 +96,9 @@ impl Algorithm for Knn {
         sum_sim / sum_sim_times_val
     }
 }
+
+impl Default for Knn {
+    fn default() -> Self {
+        Self::new(40, 1, true, Similarity::Cosine)
+    }
+}
