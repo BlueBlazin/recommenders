@@ -47,15 +47,13 @@ impl Knn {
             matrix[(user, item)] = value;
 
             if self.user_based {
-                self.edges
-                    .get_mut(&item)
-                    .map(|entry| entry.push((user, value)));
+                self.edges.get_mut(&item).unwrap().push((user, value));
             } else {
-                self.edges
-                    .get_mut(&user)
-                    .map(|entry| entry.push((item, value)));
+                self.edges.get_mut(&user).unwrap().push((item, value));
             }
         }
+
+        println!("{:?}", self.edges);
 
         if !self.user_based {
             matrix.transpose_mut();
@@ -86,6 +84,8 @@ impl Algorithm for Knn {
             .iter()
             .map(|&(x2, value)| (OrderedFloat(sim[(x1, x2)]), OrderedFloat(value)))
             .collect();
+
+        // println!("{:?}", self.edges);
 
         let mut sum_sim = 0.0;
         let mut sum_sim_times_val = 0.0;
