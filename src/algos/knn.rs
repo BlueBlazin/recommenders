@@ -1,7 +1,10 @@
+// Adapted from https://github.com/NicolasHug/Surprise/blob/master/surprise/prediction_algorithms/knns.py
 use crate::algos::Algorithm;
 use crate::data::Dataset;
 use crate::similarities::{cosine, msd, Similarity};
 use na::DMatrix;
+use ordered_float::OrderedFloat;
+use std::collections::{BinaryHeap, HashMap};
 
 pub struct Knn {
     pub k: usize,
@@ -9,16 +12,18 @@ pub struct Knn {
     pub user_based: bool,
     pub similarity: Similarity,
     sim: Option<DMatrix<f64>>,
+    edges: HashMap<usize, Vec<(usize, f64)>>,
 }
 
 impl Knn {
     pub fn new(k: usize, min_k: usize, user_based: bool, similarity: Similarity) -> Self {
         Self {
-            sim: None,
             k,
             min_k,
             user_based,
             similarity,
+            sim: None,
+            edges: HashMap::new(),
         }
     }
 
@@ -30,6 +35,14 @@ impl Knn {
             let item = dataset.item_to_idx[&dataset.items[i]];
             let value = dataset.values[i];
             matrix[(user, item)] = value;
+
+            if self.user_based {
+                let entry = self.edges.entry(item).or_insert(vec![]);
+                entry.push((user, value));
+            } else {
+                let entry = self.edges.entry(user).or_insert(vec![]);
+                entry.push((item, value));
+            }
         }
 
         if !self.user_based {
@@ -49,6 +62,37 @@ impl Algorithm for Knn {
     }
 
     fn predict(&self, user_idx: usize, item_idx: usize) -> f64 {
-        todo!()
+        let sim = self.sim.as_ref().unwrap();
+
+        let (x1, y) = if self.user_based {
+            (user_idx, item_idx)
+        } else {
+            (item_idx, user_idx)
+        };
+
+        let mut neighbors: BinaryHeap<_> = self.edges[&y]
+            .iter()
+            .map(|&(x2, value)| (OrderedFloat(sim[(x1, x2)]), OrderedFloat(value)))
+            .collect();
+
+        let mut sum_sim = 0.0;
+        let mut sum_sim_times_val = 0.0;
+        let mut k = 0;
+
+        while let Some((s, value)) = neighbors.pop() {
+            sum_sim += s.0;
+            sum_sim_times_val += s.0 * value.0;
+            k += 1;
+
+            if k == self.k {
+                break;
+            }
+        }
+
+        if k < self.min_k {
+            panic!("Not enough neighbors.");
+        }
+
+        sum_sim / sum_sim_times_val
     }
 }
