@@ -30,6 +30,16 @@ impl Knn {
     fn compute_similarities(&mut self, dataset: &Dataset) -> DMatrix<f64> {
         let mut matrix = DMatrix::zeros(dataset.num_users, dataset.num_items);
 
+        let range = if self.user_based {
+            0..dataset.num_items
+        } else {
+            0..dataset.num_users
+        };
+
+        for key in range {
+            self.edges.insert(key, vec![]);
+        }
+
         for i in 0..dataset.len() {
             let user = dataset.user_to_idx[&dataset.users[i]];
             let item = dataset.item_to_idx[&dataset.items[i]];
@@ -37,11 +47,13 @@ impl Knn {
             matrix[(user, item)] = value;
 
             if self.user_based {
-                let entry = self.edges.entry(item).or_insert(vec![]);
-                entry.push((user, value));
+                self.edges
+                    .get_mut(&item)
+                    .map(|entry| entry.push((user, value)));
             } else {
-                let entry = self.edges.entry(user).or_insert(vec![]);
-                entry.push((item, value));
+                self.edges
+                    .get_mut(&user)
+                    .map(|entry| entry.push((item, value)));
             }
         }
 
@@ -100,5 +112,53 @@ impl Algorithm for Knn {
 impl Default for Knn {
     fn default() -> Self {
         Self::new(40, 1, true, Similarity::Cosine)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::algos::{Algorithm, Evaluate, Knn};
+    use crate::data::{CsvReader, Dataset};
+    use crate::metrics::MetricType;
+
+    #[test]
+    fn test_fit() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut knn = Knn::default();
+        knn.fit(&dataset);
+    }
+
+    #[test]
+    fn test_predict() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut knn = Knn::default();
+        knn.fit(&dataset);
+        let _pred = knn.predict(
+            dataset.user_to_idx[&dataset.users[0]],
+            dataset.item_to_idx[&dataset.items[0]],
+        );
+    }
+
+    #[test]
+    fn test_evaluate() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
+        let (trainset, testset) = dataset.train_test_split(80);
+
+        let mut knn = Knn::default();
+        knn.fit(&trainset);
+        let metrics = knn.evaluate(
+            &testset,
+            vec![
+                MetricType::Rmse,
+                MetricType::Mae,
+                MetricType::Mape,
+                MetricType::Smape,
+            ],
+        );
+
+        println!("{:?}", metrics);
     }
 }
