@@ -54,7 +54,7 @@ impl Knn {
         }
 
         if !self.user_based {
-            matrix.transpose_mut();
+            matrix = matrix.transpose();
         }
 
         match self.similarity {
