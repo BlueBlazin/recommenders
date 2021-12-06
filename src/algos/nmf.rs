@@ -188,6 +188,48 @@ impl Algorithm for Nmf {
 
 #[cfg(test)]
 mod tests {
+    use crate::algos::{Algorithm, Evaluate, Nmf};
+    use crate::data::{CsvReader, Dataset};
+    use crate::metrics::MetricType;
+
     #[test]
-    fn test_fit() {}
+    fn test_fit() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut nmf = Nmf::default();
+        nmf.fit(&dataset);
+    }
+
+    #[test]
+    fn test_predict() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter());
+        let mut nmf = Nmf::default();
+        nmf.fit(&dataset);
+        let _pred = nmf.predict(
+            dataset.user_to_idx[&dataset.users[0]],
+            dataset.item_to_idx[&dataset.items[0]],
+        );
+    }
+
+    #[test]
+    fn test_evaluate() {
+        let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
+        let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
+        let (trainset, testset) = dataset.train_test_split(80);
+
+        let mut nmf = Nmf::default();
+        nmf.fit(&trainset);
+        let metrics = nmf.evaluate(
+            &testset,
+            vec![
+                MetricType::Rmse,
+                MetricType::Mae,
+                MetricType::Mape,
+                MetricType::Smape,
+            ],
+        );
+
+        println!("{:?}", metrics);
+    }
 }

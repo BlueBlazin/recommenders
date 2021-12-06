@@ -32,12 +32,6 @@ impl Knn {
     fn compute_similarities(&mut self, size: usize, dataset: &Dataset) -> DMatrix<f64> {
         let mut matrix = DMatrix::zeros(dataset.num_users, dataset.num_items);
 
-        // let range = if self.user_based {
-        //     0..dataset.num_items
-        // } else {
-        //     0..dataset.num_users
-        // };
-
         for key in 0..size {
             self.edges.insert(key, vec![]);
         }
@@ -102,16 +96,19 @@ impl Algorithm for Knn {
 
         let mut neighbors: BinaryHeap<_> = self.edges[&y]
             .iter()
-            .map(|&(x2, value)| (OrderedFloat(sim[(x1, x2)]), OrderedFloat(value)))
+            .map(|&(x2, value)| (x2, OrderedFloat(sim[(x1, x2)]), OrderedFloat(value)))
             .collect();
+
+        let means = self.means.as_ref().unwrap();
+        let est = means[x1];
 
         let mut sum_sim = 0.0;
         let mut sum_sim_times_val = 0.0;
         let mut k = 0;
 
-        while let Some((s, value)) = neighbors.pop() {
+        while let Some((x2, s, value)) = neighbors.pop() {
             sum_sim += s.0;
-            sum_sim_times_val += s.0 * value.0;
+            sum_sim_times_val += s.0 * (value.0 - means[x2]);
             k += 1;
 
             if k == self.k {
@@ -120,10 +117,14 @@ impl Algorithm for Knn {
         }
 
         if k < self.min_k {
-            panic!("Not enough neighbors.");
+            sum_sim = 0.0;
         }
 
-        sum_sim / sum_sim_times_val
+        if sum_sim_times_val == 0.0 {
+            est
+        } else {
+            est + sum_sim / sum_sim_times_val
+        }
     }
 }
 
