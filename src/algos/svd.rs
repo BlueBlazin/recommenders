@@ -176,7 +176,7 @@ mod tests {
     fn test_evaluate() {
         let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
         let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
-        let (trainset, testset) = dataset.train_test_split(80);
+        let (trainset, testset) = dataset.train_test_split(0.8);
 
         let mut svd = Svd::default();
         svd.fit(&trainset);

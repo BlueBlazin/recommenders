@@ -74,7 +74,9 @@ impl<'a> Dataset<'a> {
         self
     }
 
-    pub fn train_test_split(&'a self, num_train: usize) -> (Self, Self) {
+    pub fn train_test_split(&'a self, train_size: f64) -> (Self, Self) {
+        let num_train = (self.len() as f64 * train_size) as usize;
+
         let trainset = Dataset {
             user_to_idx: Rc::clone(&self.user_to_idx),
             item_to_idx: Rc::clone(&self.item_to_idx),
@@ -107,13 +109,13 @@ mod tests {
     fn test_train_test_split() {
         let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
         let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
-        let (trainset, testset) = dataset.train_test_split(60);
+        let (trainset, testset) = dataset.train_test_split(0.6);
         println!("{}, {}", trainset.shuffle().len(), testset.len());
     }
 
     #[test]
     fn test_shuffle() {
         let csv_reader = CsvReader::new("./test.csv", (0, 1, 2), b'\t', false);
-        let dataset = Dataset::new(csv_reader.into_iter()).shuffle();
+        let _dataset = Dataset::new(csv_reader.into_iter()).shuffle();
     }
 }
