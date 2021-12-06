@@ -2,7 +2,7 @@
 use crate::algos::Algorithm;
 use crate::data::Dataset;
 use crate::similarities::{cosine, msd, Similarity};
-use na::DMatrix;
+use na::{DMatrix, DVector};
 use ordered_float::OrderedFloat;
 use std::collections::{BinaryHeap, HashMap};
 
@@ -12,6 +12,7 @@ pub struct Knn {
     pub user_based: bool,
     pub similarity: Similarity,
     sim: Option<DMatrix<f64>>,
+    means: Option<DVector<f64>>,
     edges: HashMap<usize, Vec<(usize, f64)>>,
 }
 
@@ -23,20 +24,21 @@ impl Knn {
             user_based,
             similarity,
             sim: None,
+            means: None,
             edges: HashMap::new(),
         }
     }
 
-    fn compute_similarities(&mut self, dataset: &Dataset) -> DMatrix<f64> {
+    fn compute_similarities(&mut self, size: usize, dataset: &Dataset) -> DMatrix<f64> {
         let mut matrix = DMatrix::zeros(dataset.num_users, dataset.num_items);
 
-        let range = if self.user_based {
-            0..dataset.num_items
-        } else {
-            0..dataset.num_users
-        };
+        // let range = if self.user_based {
+        //     0..dataset.num_items
+        // } else {
+        //     0..dataset.num_users
+        // };
 
-        for key in range {
+        for key in 0..size {
             self.edges.insert(key, vec![]);
         }
 
@@ -66,7 +68,27 @@ impl Knn {
 
 impl Algorithm for Knn {
     fn fit(&mut self, dataset: &Dataset) {
-        self.sim = Some(self.compute_similarities(dataset));
+        let size = if self.user_based {
+            dataset.num_items
+        } else {
+            dataset.num_users
+        };
+
+        self.sim = Some(self.compute_similarities(size, dataset));
+
+        let mut sums = DVector::zeros(size);
+        let mut counts = DVector::zeros(size);
+
+        for i in 0..dataset.len() {
+            let user = dataset.user_to_idx[&dataset.users[i]];
+            let value = dataset.values[i];
+            if self.user_based {
+                sums[user] += value;
+                counts[user] += 1.0;
+            }
+        }
+
+        self.means = Some(sums.component_div(&counts));
     }
 
     fn predict(&self, user_idx: usize, item_idx: usize) -> f64 {
