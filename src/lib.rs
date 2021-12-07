@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 extern crate nalgebra as na;
 
 pub mod algos;
