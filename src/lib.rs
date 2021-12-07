@@ -1,4 +1,5 @@
-#![warn(missing_docs)]
+#![deny(missing_docs)]
+#![deny(missing_doc_code_examples)]
 
 extern crate nalgebra as na;
 
